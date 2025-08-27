@@ -6,8 +6,8 @@ import time
 courseId='1ca7e86f42a244ec9bc1690f7920cd20' #课程id
 courseSemaster=1 #学年
 cookie="Your Cookies"#⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
-interval=5000 # 默认10000，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
-sleepBetweenRequests=1 #默认每个请求之间休眠5s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
+interval=5000 # 默认5000，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
+sleepBetweenRequests=2 #默认每个请求之间休眠2s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
 maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长，默认1200s
 
 #配置结束
