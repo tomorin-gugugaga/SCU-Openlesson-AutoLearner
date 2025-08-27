@@ -1,13 +1,14 @@
 import requests
-
+import time
 
 #配置开始
 
 courseId='1ca7e86f42a244ec9bc1690f7920cd20' #课程id
 courseSemaster=1 #学年
-cookie="Your Cookie" #⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
-interval=5000 # 默认5000，可根据需求增加至报错为止
-maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长
+cookie="Your Cookies"#⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
+interval=5000 # 默认10000，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
+sleepBetweenRequests=1 #默认每个请求之间休眠5s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
+maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长，默认1200s
 
 #配置结束
 
@@ -19,9 +20,13 @@ headers={
 
 def getUserInfo():
     #https://ecourse.scu.edu.cn/unifiedplatform/v1/user/current
-    url="https://ecourse.scu.edu.cn/unifiedplatform/v1/user/current"
-    resp=requests.request("GET",url=url,headers=headers)
-    return int(resp.json()['extendMessage']['userCode'])
+    try:
+        url="https://ecourse.scu.edu.cn/unifiedplatform/v1/user/current"
+        resp=requests.request("GET",url=url,headers=headers)
+        return int(resp.json()['extendMessage']['userCode'])
+    except:
+        print("登录状态可能已过期，请尝试重新登录并再次获取cookies")
+        return -1
 
 
 
@@ -62,13 +67,17 @@ def fetchVidInfo(chapter_describe_List:list):
     
 
 def addTime(courseId:str,guid_:str,courseType:int,courseSemester:int):
-    # 增加学习时长（允许视频时长±10000毫秒浮动）
+    # 增加学习时长（审核标准：允许视频时长±10000毫秒浮动）
     
     jdata={"courseId":courseId,"timeInterval":interval,"courseType":courseType,"resourceId":guid_,"courseSemester":courseSemester}
     
     resp = requests.request("POST", "https://ecourse.scu.edu.cn/learn/v1/statistics/course/learntime", headers=headers, json=jdata)
     print("Now Stydying:",guid_,resp.json())
-    return int(resp.json()["data"]["learnTime"])
+    try:
+        return int(resp.json()["data"]["learnTime"])
+    except: 
+        print("请求失败，可能被风控")
+        return -1
 
 
 def changeLessonStatus(guid_,courseType:int,courseSemester:int,userCode:int):
@@ -84,6 +93,8 @@ def changeLessonStatus(guid_,courseType:int,courseSemester:int,userCode:int):
 if __name__ == '__main__':
 
     userCode=getUserInfo()
+    if userCode==-1:
+        raise SystemExit
     lessonList=fetchLessonList(courseId,1)
 
     VidInfo=[]
@@ -124,6 +135,7 @@ if __name__ == '__main__':
         ptr=0
         for guid_ in guid_List:
             if flag[ptr]:
+                time.sleep(sleepBetweenRequests)
                 learntime=addTime(courseId,guid_,1,courseSemaster)
                 print("Studied:",learntime*10000,"/",videoDurationList[ptr])
                 counter+=1
