@@ -5,10 +5,10 @@ import time
 
 courseId='1ca7e86f42a244ec9bc1690f7920cd20' #课程id
 courseSemaster=1 #学年
-cookie="Your Cookies"#⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
-interval=5000 # 默认5000，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
-sleepBetweenRequests=2 #默认每个请求之间休眠2s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
-maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长，默认1200s
+cookie="Your Cookie" #⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
+interval=6000 # 默认每次请求向学习时长中添加6000ms，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
+sleepBetweenRequests=3 #默认每个请求之间休眠3s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:xxx'} 请适量调高
+maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长
 
 #配置结束
 
@@ -20,6 +20,7 @@ headers={
 
 def getUserInfo():
     #https://ecourse.scu.edu.cn/unifiedplatform/v1/user/current
+    
     try:
         url="https://ecourse.scu.edu.cn/unifiedplatform/v1/user/current"
         resp=requests.request("GET",url=url,headers=headers)
@@ -38,7 +39,12 @@ def fetchLessonList(courseId:str,semester:int):
         "type":'',
         "semester":semester
     }
-    resp=requests.get(url=url,params=params,headers=headers)
+    try:
+        resp=requests.get(url=url,params=params,headers=headers)
+    except:
+        print("无法获取课程列表-请求出错，程序将退出")
+        raise SystemError
+
     #print(resp.json())
     lessonList=resp.json()['data']
     return lessonList
@@ -52,7 +58,11 @@ def fetchVidInfo(chapter_describe_List:list):
 
     url='https://ecourse.scu.edu.cn/learn/v1/course/file/info'
     jdata=chapter_describe_List
-    resp=requests.request("POST",url=url,headers=headers,json=jdata)
+    try:
+        resp=requests.request("POST",url=url,headers=headers,json=jdata)
+    except:
+        print("无法获取视频时长-请求出错，程序将退出")
+        raise SystemError
     VidInfoList=resp.json()['data']
     #print(resp.json())
     videoDurationList=[]
@@ -71,9 +81,10 @@ def addTime(courseId:str,guid_:str,courseType:int,courseSemester:int):
     
     jdata={"courseId":courseId,"timeInterval":interval,"courseType":courseType,"resourceId":guid_,"courseSemester":courseSemester}
     
-    resp = requests.request("POST", "https://ecourse.scu.edu.cn/learn/v1/statistics/course/learntime", headers=headers, json=jdata)
-    print("Now Stydying:",guid_,resp.json())
+    print("Now Stydying:",guid_)
     try:
+        resp = requests.request("POST", "https://ecourse.scu.edu.cn/learn/v1/statistics/course/learntime", headers=headers, json=jdata)
+        print(resp.json())
         return int(resp.json()["data"]["learnTime"])
     except: 
         print("请求失败，可能被风控")
@@ -87,6 +98,7 @@ def changeLessonStatus(guid_,courseType:int,courseSemester:int,userCode:int):
     url="https://ecourse.scu.edu.cn/learn/v1/learningsituation/resource/study/status"
     jdata={"courseId":"1ca7e86f42a244ec9bc1690f7920cd20","courseType":courseType,"subsectionId":guid_,"status":2,"resourceType":"video","courseSemester":courseSemaster,"userCode":userCode,"studyTotalTime":1200000000}
     resp = requests.request("POST",url,headers=headers,json=jdata)
+
     print("Changing Lesson Status:",guid_,resp.json())
     return resp.json()
 
@@ -95,7 +107,7 @@ if __name__ == '__main__':
     userCode=getUserInfo()
     if userCode==-1:
         raise SystemExit
-    lessonList=fetchLessonList(courseId,1)
+    lessonList=fetchLessonList(courseId,courseSemaster)
 
     VidInfo=[]
     guid_List=[]
