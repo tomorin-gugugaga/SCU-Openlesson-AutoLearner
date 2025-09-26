@@ -24,7 +24,7 @@ Python3 安装Requests包 （可能需配置venv）
 - 第六步<br/>粘贴到代码cookie变量的引号中<img width="837" height="255" alt="image" src="https://github.com/user-attachments/assets/3db9eada-257b-4ec5-8548-4cc257e7f1fa" />
 
 ## 备注
-目前仅支持课程关键信息存储在`childinfo-childinfo-info`处的课程，如《实验室安全管理与操作规范》
+目前支持课程关键信息存储在`childinfo-childinfo-info`处的课程，如《实验室安全管理与操作规范》
 ```json
 
 [
@@ -89,7 +89,7 @@ Python3 安装Requests包 （可能需配置venv）
 ```
 
 
-对于课程关键信息存储在`childinfo-info`处的课程，如《高等数学高阶课程》,相关逻辑有所差别，正在开发
+对于课程关键信息存储在`childinfo-info`处的课程，如《高等数学高阶课程》,相关逻辑有所差别，最新版本已尝试适配，如「新生线上第一课」现已测试通过
 ```json
 
 [
