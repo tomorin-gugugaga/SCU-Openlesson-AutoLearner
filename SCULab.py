@@ -3,9 +3,10 @@ import time
 
 #配置开始
 
-courseId='66a33dc0330a4d079309c1996032ad30' #课程id 目前经过测试的课程id: 新生线上第一课:66a33dc0330a4d079309c1996032ad30  实验室安全课:1ca7e86f42a244ec9bc1690f7920cd20
-courseSemaster=1 #学年
-cookie="Your Cookie" #⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
+courseId='1b0acc38feb34fd299dcd283adeaf4d8' #课程id 目前经过测试的课程id: 新生线上第一课:66a33dc0330a4d079309c1996032ad30  实验室安全课:1ca7e86f42a244ec9bc1690f7920cd20 国家安全教育:1b0acc38feb34fd299dcd283adeaf4d8
+courseSemester=1 #学年
+cookie=""
+#⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
 interval=6000 # 默认每次请求向学习时长中添加6000ms，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
 sleepBetweenRequests=0 #默认每个请求之间休眠0s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
 maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长
@@ -29,7 +30,23 @@ def getUserInfo():
         print("登录状态可能已过期，请尝试重新登录并再次获取cookies")
         return -1
 
-
+def joinClass(courseId,courseType,courseSemester):
+    payload={"courseId":courseId,"courseType":courseType,"courseSemester":courseSemester}
+    try:
+        response0 = requests.request("POST", "https://ecourse.scu.edu.cn/learn/v1/learningsituation/join", headers=headers, json=payload)
+        response_json=response0.json()
+        if response_json["message"]=="OK":
+            print("加入课程成功")
+            print(response_json)
+            return True
+        
+        else:
+            print("加入课程失败，错误信息，请尝试手动加入课程，程序将退出：")
+            print(response_json)
+            return False
+    except:
+        print("无法加入课程，请求出错，程序将退出")
+        raise SystemError
 
 def fetchLessonList(courseId:str,semester:int):
     
@@ -73,6 +90,9 @@ def fetchVidInfo(chapter_describe_List:list):
     for i in VidInfoList:
         try:
             videoDurationList.append(int(i["videoDuration"]))
+        except KeyboardInterrupt:
+            print("用户中断，程序退出")
+            raise SystemExit
         except:
             videoDurationList.append(-1)
     print(videoDurationList)
@@ -92,6 +112,9 @@ def addTime(courseId:str,guid_:str,courseType:int,courseSemester:int):
         resp = requests.request("POST", "https://ecourse.scu.edu.cn/learn/v1/statistics/course/learntime", headers=headers, json=jdata)
         print(resp.json())
         return int(resp.json()["data"]["learnTime"])
+    except KeyboardInterrupt:
+        print("用户中断，程序退出")
+        raise SystemExit
     except:
         print("请求失败，可能被风控")
         return -1
@@ -102,23 +125,30 @@ def changeLessonStatus(guid_,courseType:int,courseSemester:int,userCode:int):
     # https://ecourse.scu.edu.cn/learn/v1/learningsituation/resource/study/status
 
     url="https://ecourse.scu.edu.cn/learn/v1/learningsituation/resource/study/status"
-    jdata={"courseId":"1ca7e86f42a244ec9bc1690f7920cd20","courseType":courseType,"subsectionId":guid_,"status":2,"resourceType":"video","courseSemester":courseSemaster,"userCode":userCode,"studyTotalTime":1200000000}
-    resp = requests.request("POST",url,headers=headers,json=jdata)
-
-    print("Changing Lesson Status:",guid_,resp.json())
-    return resp.json()
+    jdata={"courseId":"1ca7e86f42a244ec9bc1690f7920cd20","courseType":courseType,"subsectionId":guid_,"status":2,"resourceType":"video","courseSemester":courseSemester,"userCode":userCode,"studyTotalTime":1200000000}
+    try: 
+        resp = requests.request("POST",url,headers=headers,json=jdata)
+        #{'status': 400, 'message': 'subsectionId: 399cd1b75cd8482c9ac79c7f481802b5 未匹配到对应的资源'}
+        print("Changing Lesson Status:",guid_,resp.json())
+        if resp.json()['status']!=200:
+            print("可能该课程无需进行状态更改，如课程界面状态未成功变更，请手动进入课程页面观看1分钟视频以刷新状态")
+        return resp.json()
+    except:
+        print("更改课程状态失败:请求出错")
+        return -1
 
 if __name__ == '__main__':
     userCode=getUserInfo()
     if userCode==-1:
         raise SystemExit
     
-    lessonList=fetchLessonList(courseId,courseSemaster)
+    lessonList=fetchLessonList(courseId,courseSemester)
     #print(lessonList)
 
 
 
-
+    if joinClass(courseId,1,courseSemester)==False:
+        raise SystemExit
 
     VidInfo=[]
     guid_List=[]
@@ -155,6 +185,9 @@ if __name__ == '__main__':
                 chapter_describe_List.append(cd2["chapter_describe"])
                 guid_List.append(cd2["guid_"])
                 VidNum+=1
+    except KeyboardInterrupt:
+        print("用户中断，程序退出")
+        raise SystemExit
     except:
         print("Unable to parse lesson list, the program will exit")
         raise SystemExit
@@ -183,31 +216,19 @@ if __name__ == '__main__':
         for guid_ in guid_List:
             if flag[ptr]:
                 time.sleep(sleepBetweenRequests)
-                learntime=addTime(courseId,guid_,1,courseSemaster)
+                learntime=addTime(courseId,guid_,1,courseSemester)
                 print("Studied:",learntime*10000,"/",videoDurationList[ptr])
                 counter+=1
                 if videoDurationList[ptr]==-1:
                     if learntime*10000 > maxTime:
                         flag[ptr]=False
-                        if Dir_Type==2:
-                            changeLessonStatus(guid_,1,courseSemaster,userCode)
+                        changeLessonStatus(guid_,1,courseSemester,userCode)
 
                 else:
                     if learntime*10000 > videoDurationList[ptr] :
-                            flag[ptr]=False
-                            if Dir_Type==2:
-                                changeLessonStatus(guid_,1,courseSemaster,userCode)
+                        flag[ptr]=False
+                        changeLessonStatus(guid_,1,courseSemester,userCode)
                 
                 
             ptr+=1
     print("课程学习已完成，如课程界面状态未成功变更，请手动进入课程页面观看1分钟视频以刷新状态")
-
-
-
-
-
-
-        
-
-
-                
