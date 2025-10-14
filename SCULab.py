@@ -5,7 +5,7 @@ import time
 
 courseId='1b0acc38feb34fd299dcd283adeaf4d8' #课程id 目前经过测试的课程id: 新生线上第一课:66a33dc0330a4d079309c1996032ad30  实验室安全课:1ca7e86f42a244ec9bc1690f7920cd20 国家安全教育:1b0acc38feb34fd299dcd283adeaf4d8
 courseSemester=1 #学年
-cookie=""
+cookie="Paste Your Cookie Here!"
 #⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
 interval=6000 # 默认每次请求向学习时长中添加6000ms，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
 sleepBetweenRequests=0 #默认每个请求之间休眠0s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
