@@ -11,7 +11,7 @@ courseType=1 #课程类型，默认为1
 cookie="Paste Your Cookie Here!"
 #⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
 interval=6000 # 默认每次请求向学习时长中添加6000ms，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
-sleepBetweenRequests=1 #默认每个请求之间休眠1s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
+sleepBetweenRequests=0 #默认每个请求之间休眠0s，防止被封控，若出现 {'status': 200, 'message': 'OK', 'data': '调用太过频繁:1000'} 请适量调高
 maxConcurrent=3 #最大并发数，同时处理的视频数量，建议设置为1-5，避免请求过快
 maxTime=12000000000 #在无法获取视频时长的情况下每个视频最大学习时长
 
@@ -115,9 +115,9 @@ async def addTime(courseId:str,guid_:str,courseType:int,courseSemester:int,video
             await asyncio.sleep(sleepBetweenRequests) 
             resp = await arequests.request("POST", "https://ecourse.scu.edu.cn/learn/v1/statistics/course/learntime", headers=headers, json=jdata)
             print(resp.json())
-            #{'status': 200, 'message': 'OK', 'data': '获取分布式锁失败:course:learn:time:lock:1b0acc38feb34fd299dcd283adeaf4d8:1:2025141240131'}
+            
             if "获取分布式锁失败" in resp.json()['data']:
-                print("速率过快。请适当调低 最大并发数 / 调高 请求间休眠时长")
+                print("速率过快。请适当调低最大并发数")
                 return -1
             learntime=int(resp.json()["data"]["learnTime"])
             #输出学习进度
