@@ -4,7 +4,7 @@ import time
 #配置开始
 
 courseId='1b0acc38feb34fd299dcd283adeaf4d8' #课程id 目前经过测试的课程id: 新生线上第一课:66a33dc0330a4d079309c1996032ad30  实验室安全课:1ca7e86f42a244ec9bc1690f7920cd20 国家安全教育:1b0acc38feb34fd299dcd283adeaf4d8
-courseSemester=1 #学年
+courseSemester=1 #学期
 cookie="Paste Your Cookie Here!"
 #⚠️复制自己的cookie并粘贴,应当形如fanyamoocs=xxx; Hm_lvt_bxxx; HMACCOUNT=xxx; S1_rman_sid=xxx; Hm_lpvt_xxx=xxx; fs_session_id=xxx
 interval=6000 # 默认每次请求向学习时长中添加6000ms，可根据需求增加至出现 {'status': 400, 'message': '学习时长异常不记入统计'} 为止
@@ -150,12 +150,14 @@ if __name__ == '__main__':
     if joinClass(courseId,1,courseSemester)==False:
         raise SystemExit
 
-    VidInfo=[]
+    #VidInfo=[]
     guid_List=[]
     chapter_describe_List=[]
+    status_List=[]
     VidNum=0
     Dir_Type=2 #1 or 2
 
+    #由于目录结构特征，必须先尝试TYPE2目录结构，失败后再尝试TYPE1目录结构
     try: 
         print("Trying For TYPE2 Directories (default)")
         for i in lessonList:
@@ -164,13 +166,15 @@ if __name__ == '__main__':
                 cd2=j["childInfo"]
                 for k in cd2:
                     #print(k["info"])
-                    VidInfo.append(k["info"])
+                    #VidInfo.append(k["info"])
+                    status_List.append(k["info"]["status"])
                     chapter_describe_List.append(k["info"]["chapter_describe"])
                     guid_List.append(k["info"]["guid_"])
                     VidNum+=1
         if VidNum==0:
-            VidInfo=[]
+            #VidInfo=[]
             guid_List=[]
+            status_List=[]
             chapter_describe_List=[]
             VidNum=0
             raise RuntimeError
@@ -181,7 +185,8 @@ if __name__ == '__main__':
             cd=i["childInfo"]
             for j in cd:
                 cd2=j["info"]
-                VidInfo.append(cd2)
+                #VidInfo.append(cd2)
+                status_List.append(cd2["status"])
                 chapter_describe_List.append(cd2["chapter_describe"])
                 guid_List.append(cd2["guid_"])
                 VidNum+=1
@@ -203,12 +208,18 @@ if __name__ == '__main__':
 
     counter=999
     flag=[]
-    flagsize=0
     #maxTime=max(videoDurationList)
+
+    #标记需要学习的课程
     for i in range(VidNum):
-        flag.append("True")
+        if str(status_List[i])=="2":
+            flag.append(False)
+        else:
+            flag.append(True)
 
-
+    #print(flag)
+    #print(status_List)
+    
     
     while counter!=0 :
         counter=0
