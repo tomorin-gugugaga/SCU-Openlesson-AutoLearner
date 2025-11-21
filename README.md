@@ -4,7 +4,7 @@
 目前测试支持：实验室安全管理与操作规范、新生线上第一课、国家安全教育
 
 ## 环境需求
-Python3 安装Requests包 （可能需配置venv）
+Python3 安装Requests,asyncio,requests_async包 （可能需配置venv）
 
 
 ## 需要配置的内容：
